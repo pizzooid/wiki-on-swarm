@@ -1,0 +1,12 @@
+{
+  "type": "module",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.10",
+    "lunr": "^2.3.9",
+    "lz-string": "^1.4.4",
+    "zx": "^5.2.0"
+  },
+  "scripts": {
+    "start": "tsc -p tsconfig.json && node src/create-index.js"
+  }
+}
