@@ -28,7 +28,7 @@ code {
   width: 100%;
   border-spacing: 0;
   border-collapse: collapse;
-  height: 3.375em;
+  height: 3.4em;
   white-space: nowrap;
   border-top: 1px solid #c8ccd1;
   margin-top: -1px;
@@ -39,11 +39,11 @@ code {
   position: absolute;
   z-index: 100;
   background: white;
-  margin-top: 4.5em;
-  border: 1px solid black;
+  top: 2.75em;
+  border: 1px solid #222222;
   width: 100%
 }
-.search-results div {
+.results-list {
   padding: 0.5em;
 }
 
@@ -55,7 +55,7 @@ code {
   background-size: 1.125em;
   -webkit-appearance: none;
   margin-top: 0;
-  height: 2.25em;
+  height: 2.2em;
   border: 1px solid #ffffff;
   border-radius: 2px;
   padding: 7px 0 7px 2.0625em;
