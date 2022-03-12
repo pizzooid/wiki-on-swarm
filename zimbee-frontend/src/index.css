@@ -1,0 +1,70 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+#my-outer-header {
+  background-color: #eaecf0;
+  border: 0;
+  box-shadow: inset 0 -1px 3px rgba(0,0,0,0.08);
+}
+.my-header {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  width: 90%;
+  max-width: 55.8em;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: collapse;
+  height: 3.375em;
+  white-space: nowrap;
+  border-top: 1px solid #c8ccd1;
+  margin-top: -1px;
+  overflow: visible;
+}
+
+.search-results {
+  position: absolute;
+  z-index: 100;
+  background: white;
+  margin-top: 4.5em;
+  border: 1px solid black;
+  width: 100%
+}
+.search-results div {
+  padding: 0.5em;
+}
+
+#search-box {
+  width: 100%;
+  background-color: #fff;
+  background-position: left 0.5em center;
+  background-repeat: no-repeat;
+  background-size: 1.125em;
+  -webkit-appearance: none;
+  margin-top: 0;
+  height: 2.25em;
+  border: 1px solid #ffffff;
+  border-radius: 2px;
+  padding: 7px 0 7px 2.0625em;
+    padding-right: 0px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+  outline: 0;
+  -webkit-transition: border-color 250ms,box-shadow 250ms;
+  transition: border-color 250ms,box-shadow 250ms;
+  background-origin: padding-box;
+  background-clip: border-box;
+  background-image: linear-gradient(transparent,transparent),url('search.svg');
+}
