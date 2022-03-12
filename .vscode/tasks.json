@@ -7,6 +7,15 @@
       "label": "interactive docker",
       "type": "shell",
       "command": "docker run -v ${workspaceFolder}:/zimbee -it zimbee"
+    },
+    {
+      "type": "npm",
+      "script": "start",
+      "problemMatcher": [
+        "$eslint-compact"
+      ],
+      "label": "npm: start",
+      "detail": "node src/create-index.mjs"
     }
   ]
 }

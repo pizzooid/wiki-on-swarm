@@ -2,10 +2,11 @@
   "type": "module",
   "dependencies": {
     "cheerio": "^1.0.0-rc.10",
+    "http-server": "^14.1.0",
     "lunr": "^2.3.9",
     "zx": "^5.2.0"
   },
   "scripts": {
-    "start": "node src/create-index.mjs"
+    "start": "node scripts/create-index.mjs"
   }
 }

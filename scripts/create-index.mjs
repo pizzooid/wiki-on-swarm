@@ -12,19 +12,29 @@ void async function () {
   const _cwDir = (await $`pwd`).stdout.trim();
   const zDumpDir = path.join(_cwDir, 'zim','dump','A');
   const folderHash = await computeMetaHash(zDumpDir);
-  const indexFile = path.join(_cwDir, 'zim','dump',folderHash?.toString());
+  const indexFile = path.join(_cwDir, 'zim','dump','index','bucket');
   const files = await fs.readdir(zDumpDir);
 
   console.log('creating search index')
   const searchIdcs = await createSearchIdces(files, zDumpDir);
-  const search = "ma"
+  const search = "mali"
   console.log(getBucketNo(search))
   console.log(searchIdcs[getBucketNo(search)].search(search))
+  console.log(searchIdcs[0].search(search))
+  for(let i = 0; i< searchIdcs.length; i++){
+    i % 20 === 0 && process.stdout.write('Writing Files ' + Math.round(100*i/searchIdcs.length)+ '% complete... \r');
+    const sIdx = searchIdcs[i];
+    await writeFileSync(indexFile+String(i).padStart(2,'0')+'.json', JSON.stringify(sIdx));
+  }
+  process.stdout.write('Writing Files 100% complete... \r');
 }()
 
 
 async function createSearchIdces(files, zDumpDir, dbs) {
-  let builders = Array(NUM_BUCKETS).fill(new lunr.Builder())
+  let builders = Array(NUM_BUCKETS);
+  for(let i =0; i<NUM_BUCKETS; i++){
+    builders[i] = new lunr.Builder();
+  }
   builders.forEach(b => {
     b.ref('name');
     b.field('contents');
@@ -36,7 +46,7 @@ async function createSearchIdces(files, zDumpDir, dbs) {
     const file = await fs.readFileSync(path.join(zDumpDir, fname), 'utf-8');
     const html = load(file);
     let contents = html('body').text().toLowerCase();
-    const words = contents.split(/[\n\r\s]+/);
+    const words = contents.split(/[.,\/#!$%\^&\*;:{}=\-_`~()\n\r\s]+/);
     for (let iBucket = 0; iBucket < NUM_BUCKETS; iBucket++) {
       const doc = {
         name: fname,
