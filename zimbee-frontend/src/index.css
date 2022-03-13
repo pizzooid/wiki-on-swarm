@@ -52,6 +52,9 @@ code {
   padding: 0.3em;
   padding-bottom: 0.1em;
 }
+.result-active{
+  background-color: #6C7C89;
+}
 
 #search-box {
   width: 100%;

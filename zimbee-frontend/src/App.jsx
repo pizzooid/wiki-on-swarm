@@ -8,37 +8,47 @@ const useStore = create((set, get) => ({
   results: null,
   isSearchingFulltext: false,
   fulltextResults: null,
-  selected: null,
-  setResults: (results) => set({ results: results, isSearching: false }),
-  setSearching: () => set({ results: null, isSearching: true }),
-  setFulltextResults: (results) => {console.log('results', results); set({ fulltextResults: results, isSearchingFulltext: false })},
-  setSearchingFulltext: () => set({ fulltextResults: null, isSearchingFulltext: true }),
-  getNumResults: () => { get().results?.length || 0 },
+  selected: -1,
+  setSelected: (index) => set({selected:index}),
+  setResults: (results) => set({ results: results?.slice(0,7), isSearching: false, selected:-1 }),
+  setSearching: () => set({ results: null, isSearching: true, selected:-1 }),
+  setFulltextResults: (results) => {console.log('results', results); set({ fulltextResults: results, isSearchingFulltext: false, selected: -1 })},
+  setSearchingFulltext: () => set({ fulltextResults: null, isSearchingFulltext: true, selected: -1 }),
 }))
 
+const MAX_RESULTS = 10;
 function Results(props) {
-  const resultsTitles = useStore(state=>state.results);
-  const setResultsTitles = useStore(state=>state.setResults);
-  const searching = useStore(state=>state.isSearching);
-  const setSearching = useStore(state=>state.setSearching);
-  const results = useStore(state=>state.fulltextResults);
-  const setResults = useStore(state=>state.setFulltextResults);
+  const pageResults = useStore(state=>state.results);
+  const numPageResults = pageResults?.length ?? 0;
+  const setPageResults = useStore(state=>state.setResults);
+  const searchingPages = useStore(state=>state.isSearching);
+  const setSearchingPages = useStore(state=>state.setSearching);
+  const fulltextResults = useStore(state=>state.fulltextResults)?.slice(0,MAX_RESULTS-numPageResults) || null;
+  const setFulltextResults = useStore(state=>state.setFulltextResults);
   const setSearchingFulltext = useStore(state=>state.setSearchingFulltext);
+  const [selected, setSelected] = useStore(state=>[state.selected, state.setSelected]);
+  let selectedResult = null;
+  if(selected >= 0){
+    if(selected < numPageResults){
+      selectedResult = pageResults[selected];
+    }
+  }
 
   useEffect(() => {
-    setSearching();
-    setSearchingFulltext()
+    setSearchingPages();
+    setSearchingFulltext();
     let unmounted = false;
     const abortController = new AbortController();
     searchTitles(props.searchString, abortController).then((result) => {
       if (unmounted)
         return;
-      setResultsTitles(result)
+      setPageResults(result);
     }).catch((e) => { console.log(e) } ); // TODO: handle errors correctly (skip e.message === 'canceled')
     searchContents(props.searchString, abortController).then((result) => {
       if (unmounted)
         return;
-      setResults(result)
+      setFulltextResults(result);
+      setSelected(1);
     }).catch((e) => { console.log(e) } );
     return function () {
       unmounted = true;
@@ -51,17 +61,17 @@ function Results(props) {
         <div className='results-list'>
           <div key='titles.search.title' className='results-list-heading'>Page Results</div>
           { 
-          searching ? <div className='results-list'>Loading ...</div> :
-          resultsTitles === null || resultsTitles === undefined || resultsTitles.length===0 ? <div className='results-list'>No matching pages</div> :
-          resultsTitles.slice(0, 8).map(r =>
-            <div key={r.ref} className="results-list-item">{r.ref}</div>
+          searchingPages ? <div className='results-list'>Loading ...</div> :
+          pageResults === null || pageResults === undefined || pageResults.length===0 ? <div className='results-list'>No matching pages</div> :
+          pageResults.map(r =>
+            <div key={r.ref} className={"results-list-item" + (selectedResult===r ?' result-active':'')}>{r.ref}</div>
           )}
           <div key='fulltext.search.title' className='results-list-heading'>Fulltext Results</div>
           {
-          results === null ? <div className='results-list'>Loading ...</div> :
-          results.length === 0 ? <div className='results-list'>No matching fulltext results</div> :
+          fulltextResults === null ? <div className='results-list'>Loading ...</div> :
+          fulltextResults.length === 0 ? <div className='results-list'>No matching fulltext results</div> :
             <>
-              {results.slice(0, 3).map(r =>
+              {fulltextResults.map(r =>
                 <div key={r.ref} className="results-list-item">{r.ref}</div>
               )}
             </>
