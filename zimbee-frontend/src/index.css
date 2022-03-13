@@ -43,8 +43,14 @@ code {
   border: 1px solid #222222;
   width: 100%
 }
-.results-list {
+.results-list-item {
   padding: 0.5em;
+}
+.results-list-heading {
+  background-color: rgb(234, 236, 240);
+  font-weight: bold;
+  padding: 0.3em;
+  padding-bottom: 0.1em;
 }
 
 #search-box {

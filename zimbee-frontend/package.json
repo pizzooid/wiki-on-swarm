@@ -8,8 +8,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^0.0.0-experimental-581f0c42e-20220310",
-    "react-dom": "^0.0.0-experimental-581f0c42e-20220310"
+    "lunr": "^2.3.9",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "zustand": "^3.7.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^1.0.7",

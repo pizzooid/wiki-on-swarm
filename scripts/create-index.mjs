@@ -12,21 +12,26 @@ void async function () {
   const _cwDir = (await $`pwd`).stdout.trim();
   const zDumpDir = path.join(_cwDir, 'zim','dump','A');
   const folderHash = await computeMetaHash(zDumpDir);
-  const indexFile = path.join(_cwDir, 'zim','dump','index','bucket');
+  const indexFile = path.join(_cwDir, 'zimbee-frontend','public','index','bucket');
   const files = await fs.readdir(zDumpDir);
 
   console.log('creating search index')
   const searchIdcs = await createSearchIdces(files, zDumpDir);
-  const search = "mali"
-  console.log(getBucketNo(search))
-  console.log(searchIdcs[getBucketNo(search)].search(search))
-  console.log(searchIdcs[0].search(search))
   for(let i = 0; i< searchIdcs.length; i++){
-    i % 20 === 0 && process.stdout.write('Writing Files ' + Math.round(100*i/searchIdcs.length)+ '% complete... \r');
+    i % 20 === 0 && process.stdout.write('Writing files ' + Math.round(100*i/searchIdcs.length)+ '% complete... \r');
     const sIdx = searchIdcs[i];
     await writeFileSync(indexFile+String(i).padStart(2,'0')+'.json', JSON.stringify(sIdx));
   }
-  process.stdout.write('Writing Files 100% complete... \r');
+  // page name index
+  const builder = new lunr.Builder();
+  builder.ref('name');
+  builder.field('field');
+  for (const fname of files) {
+    builder.add({name:fname, field: fname.toLowerCase()});
+  }
+  const sIdx = builder.build();
+  await writeFileSync(indexFile + '.titles.json', JSON.stringify(sIdx));
+  process.stdout.write('Writing files 100% complete... \r');
 }()
 
 
@@ -41,7 +46,7 @@ async function createSearchIdces(files, zDumpDir, dbs) {
   });
   let i = 0;
   for (const fname of files) {
-    i % 20 === 0 && process.stdout.write('Reading Files ' + Math.round(100*i/files.length)+ '% complete... \r');
+    i % 20 === 0 && process.stdout.write('Reading files ' + Math.round(100*i/files.length)+ '% complete... \r');
     i++;
     const file = await fs.readFileSync(path.join(zDumpDir, fname), 'utf-8');
     const html = load(file);
@@ -57,7 +62,11 @@ async function createSearchIdces(files, zDumpDir, dbs) {
       }
     }
   }
-  process.stdout.write('Reading Files 100% complete... \n');
+  process.stdout.write('Reading files 100% complete... \n');
+  for (let iBucket = 0; iBucket < NUM_BUCKETS; iBucket++) {
+    process.stdout.write('Indexing Files ' + Math.round(100*iBucket/NUM_BUCKETS)+ '% complete... \r');
+  }
+  process.stdout.write('Indexing Files ' + 100 + '% complete... \n');
   return builders.map(b => b.build());
 }
 

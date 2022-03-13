@@ -1,58 +1,73 @@
-import axios from 'axios'
 import { useEffect, useState } from 'react';
 import './App.css'
+import {searchContents, searchTitles} from './search';
+import create from 'zustand'
 
-var NUM_BUCKETS = 28;
-var getBucketNo = (str) => str.charCodeAt(0) % NUM_BUCKETS;
-
-const buckets = Array(NUM_BUCKETS).fill(null);
-
-const getIdx = async (bucket, source) => {
-  if(buckets[bucket] == null){
-    const { data } = await axios.get('../index/bucket' + String(bucket).padStart(2, '0') + '.json', {cancelToken: source.token})
-    buckets[bucket] = lunr.Index.load(data)
-  }
-  return buckets[bucket];
-}
-
-const searchContents = async (_search, source) => {
-  const search = _search.toLowerCase();
-  const bucket = getBucketNo(search)
-  const idx = await getIdx(bucket, source);
-  const res = idx.search(search);
-  if (res.length > 0){
-    return res;
-  }
-  const res2 = idx.search(search+'*');
-  return res2;
-}
+const useStore = create((set, get) => ({
+  isSearching: false,
+  results: null,
+  isSearchingFulltext: false,
+  fulltextResults: null,
+  selected: null,
+  setResults: (results) => set({ results: results, isSearching: false }),
+  setSearching: () => set({ results: null, isSearching: true }),
+  setFulltextResults: (results) => {console.log('results', results); set({ fulltextResults: results, isSearchingFulltext: false })},
+  setSearchingFulltext: () => set({ fulltextResults: null, isSearchingFulltext: true }),
+  getNumResults: () => { get().results?.length || 0 },
+}))
 
 function Results(props) {
-  const [results, setResults] = useState(null);
+  const resultsTitles = useStore(state=>state.results);
+  const setResultsTitles = useStore(state=>state.setResults);
+  const searching = useStore(state=>state.isSearching);
+  const setSearching = useStore(state=>state.setSearching);
+  const results = useStore(state=>state.fulltextResults);
+  const setResults = useStore(state=>state.setFulltextResults);
+  const setSearchingFulltext = useStore(state=>state.setSearchingFulltext);
+
   useEffect(() => {
-    console.log(props);
+    setSearching();
+    setSearchingFulltext()
     let unmounted = false;
-    const source = axios.CancelToken.source();
-    searchContents(props.searchString, source).then((result) => {
+    const abortController = new AbortController();
+    searchTitles(props.searchString, abortController).then((result) => {
       if (unmounted)
         return;
-      console.log("result", result)
+      setResultsTitles(result)
+    }).catch((e) => { console.log(e) } ); // TODO: handle errors correctly (skip e.message === 'canceled')
+    searchContents(props.searchString, abortController).then((result) => {
+      if (unmounted)
+        return;
       setResults(result)
-    });
+    }).catch((e) => { console.log(e) } );
     return function () {
       unmounted = true;
-      source.cancel("Cancelling in cleanup");
+      abortController.abort("Cancelling in cleanup");
     };
   }
   ,[props.searchString])
-  return results === null ? <div className='results-list'>Loading ...</div> :
-  (
-    <div className='results-list'>
-      {results.slice(0,10).map(r=>
-        <div key={r.ref}>{r.ref}</div>
-      )}
-    </div>
-  )
+
+  return (
+        <div className='results-list'>
+          <div key='titles.search.title' className='results-list-heading'>Page Results</div>
+          { 
+          searching ? <div className='results-list'>Loading ...</div> :
+          resultsTitles === null || resultsTitles === undefined || resultsTitles.length===0 ? <div className='results-list'>No matching pages</div> :
+          resultsTitles.slice(0, 8).map(r =>
+            <div key={r.ref} className="results-list-item">{r.ref}</div>
+          )}
+          <div key='fulltext.search.title' className='results-list-heading'>Fulltext Results</div>
+          {
+          results === null ? <div className='results-list'>Loading ...</div> :
+          results.length === 0 ? <div className='results-list'>No matching fulltext results</div> :
+            <>
+              {results.slice(0, 3).map(r =>
+                <div key={r.ref} className="results-list-item">{r.ref}</div>
+              )}
+            </>
+          }
+        </div>
+      )
 }
 
 function App() {
@@ -61,7 +76,13 @@ function App() {
   return (
     <div id="my-outer-header">
       <div className="my-header">
-        <input type="search" id="search-box" onChange={(e)=>setSearchString(e.target.value)} onFocus={()=>setShowSearchBox(true)} onBlur={()=>false && setShowSearchBox(false)} />
+        <input autoFocus={true}
+          type="search"
+          id="search-box"
+          onChange={(e) => setSearchString(e.target.value)}
+          onFocus={() => setShowSearchBox(true)}
+          onBlur={() => false && setShowSearchBox(false)}
+          />
         {showSearchBox && searchString &&
           <div className="search-results">
             <Results search="" searchString={searchString} />
