@@ -3,20 +3,25 @@ import './App.css'
 import {searchContents, searchTitles} from './search';
 import create from 'zustand'
 
+const MAX_RESULTS = 10;
 const useStore = create((set, get) => ({
   isSearching: false,
   results: null,
   isSearchingFulltext: false,
   fulltextResults: null,
   selected: -1,
-  setSelected: (index) => set({selected:index}),
+  selectNext: () => set((state)=>{
+    const numResults = (state.results?.length || 0) + (state.fulltextResults?.length || 0);
+    const selected = Math.min(state.selected+1, numResults -1, MAX_RESULTS-1)
+    return {selected};
+  }),
+  selectPrevious: () => set((state)=>({selected:Math.max(-1, state.selected-1)})),
   setResults: (results) => set({ results: results?.slice(0,7), isSearching: false, selected:-1 }),
   setSearching: () => set({ results: null, isSearching: true, selected:-1 }),
   setFulltextResults: (results) => {console.log('results', results); set({ fulltextResults: results, isSearchingFulltext: false, selected: -1 })},
   setSearchingFulltext: () => set({ fulltextResults: null, isSearchingFulltext: true, selected: -1 }),
 }))
 
-const MAX_RESULTS = 10;
 function Results(props) {
   const pageResults = useStore(state=>state.results);
   const numPageResults = pageResults?.length ?? 0;
@@ -31,6 +36,8 @@ function Results(props) {
   if(selected >= 0){
     if(selected < numPageResults){
       selectedResult = pageResults[selected];
+    } else {
+      selectedResult = fulltextResults[selected - numPageResults];
     }
   }
 
@@ -72,7 +79,7 @@ function Results(props) {
           fulltextResults.length === 0 ? <div className='results-list'>No matching fulltext results</div> :
             <>
               {fulltextResults.map(r =>
-                <div key={r.ref} className="results-list-item">{r.ref}</div>
+                <div key={r.ref} className={"results-list-item" + (selectedResult===r ?' result-active':'')}>{r.ref}</div>
               )}
             </>
           }
@@ -83,12 +90,24 @@ function Results(props) {
 function App() {
   const [searchString, setSearchString] = useState("");
   const [showSearchBox, setShowSearchBox] = useState(false);
+  const [selectNext, selectPrevious] = useStore(state=>[state.selectNext, state.selectPrevious]);
+  const handleKeyPress = (event) => {
+    if (event.key === 'ArrowDown') {
+      selectNext();
+      event.preventDefault();
+    }
+    if (event.key === 'ArrowUp') {
+      selectPrevious();
+      event.preventDefault();
+    }
+  }
   return (
     <div id="my-outer-header">
       <div className="my-header">
         <input autoFocus={true}
           type="search"
           id="search-box"
+          onKeyDown={(e)=>handleKeyPress(e)}
           onChange={(e) => setSearchString(e.target.value)}
           onFocus={() => setShowSearchBox(true)}
           onBlur={() => false && setShowSearchBox(false)}
