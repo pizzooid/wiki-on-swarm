@@ -6,7 +6,12 @@
     {
       "label": "interactive docker",
       "type": "shell",
-      "command": "docker run -v ${workspaceFolder}:/zimbee -it zimbee"
+      "command": "docker run -v ${workspaceFolder}:/local -v ${workspaceFolder}/generated:/generated -it zimbee"
+    },
+    {
+      "label": "build docker",
+      "type": "shell",
+      "command": "docker build -t zimbee ."
     },
     {
       "type": "npm",

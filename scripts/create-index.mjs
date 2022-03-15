@@ -1,17 +1,42 @@
-#! /usr/bin/env node
-import 'zx/globals';
+#!/usr/bin/env zx
+
+// import 'zx/globals';
 import {load} from 'cheerio';
 import {createHash, Hash} from 'crypto';
 import lunr from 'lunr';
 import { writeFileSync } from 'fs';
+import { argv, exit } from 'process';
+import parseArgs from 'minimist';
 
 const NUM_BUCKETS = 28;
 const getBucketNo = (str) => str.charCodeAt(0) % NUM_BUCKETS;
 
+function isValidURL(str) {
+    var regexp = /^(?:(?:https?|ftp):\/\/)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:\/\S*)?$/;
+    if (regexp.test(str)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function showHelp() {
+  process.stdout.write('Usage: \n'+argv._[0]+' -u <zim_url>')
+}
+
 void async function () {
+  const parsedArgs = parseArgs(argv);
+  if(!'u' in parsedArgs || !isValidURL(parsedArgs.u)){
+    process.stderr.write('Invalid filename.\n')
+    exit(1);
+  }
+  const url = parsedArgs.u;
+  console.log(`Loading ${url} to tmp`);
+  // $`wget ${url} -o /tmp/download.zim` // TODO: enable download
+  // $`zimdump dump --dir /tmp/zimdump -- /tmp/download.zim `
   const _cwDir = (await $`pwd`).stdout.trim();
-  const zDumpDir = path.join(_cwDir, 'zim','dump','A');
-  const folderHash = await computeMetaHash(zDumpDir);
+  const zDumpDir = path.join('/tmp', 'zimdump','A');
+  // const folderHash = await computeMetaHash(zDumpDir);
   const indexFile = path.join(_cwDir, 'zimbee-frontend','public','index','bucket');
   const files = await fs.readdir(zDumpDir);
 
@@ -48,18 +73,23 @@ async function createSearchIdces(files, zDumpDir, dbs) {
   for (const fname of files) {
     i % 20 === 0 && process.stdout.write('Reading files ' + Math.round(100*i/files.length)+ '% complete... \r');
     i++;
-    const file = await fs.readFileSync(path.join(zDumpDir, fname), 'utf-8');
-    const html = load(file);
-    let contents = html('body').text().toLowerCase();
-    const words = contents.split(/[.,\/#!$%\^&\*;:{}=\-_`~()\n\r\s]+/);
-    for (let iBucket = 0; iBucket < NUM_BUCKETS; iBucket++) {
-      const doc = {
-        name: fname,
-        contents: words.filter(s => typeof s==='string' && s.length > 3 && getBucketNo(s) === iBucket).join(' ')
-      };
-      if(doc.contents.length){
-        await builders[iBucket].add(doc)
+    try {
+      const file = await fs.readFileSync(path.join(zDumpDir, fname), 'utf-8');
+      const html = load(file);
+      let contents = html('body').text().toLowerCase();
+      const words = contents.split(/[.,\/#!$%\^&\*;:{}=\-_`~()\n\r\s]+/);
+      for (let iBucket = 0; iBucket < NUM_BUCKETS; iBucket++) {
+        const doc = {
+          name: fname,
+          contents: words.filter(s => typeof s === 'string' && s.length > 3 && getBucketNo(s) === iBucket).join(' ')
+        };
+        if (doc.contents.length) {
+          await builders[iBucket].add(doc)
+        }
       }
+    } catch (e) {
+      console.log(`Error reading file: ${fname}`);
+      console.log(e.message);
     }
   }
   process.stdout.write('Reading files 100% complete... \n');
