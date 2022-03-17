@@ -7,7 +7,7 @@ var getBucketNo = (str) => str.charCodeAt(0) % NUM_BUCKETS;
 let page_index = null;
 export const getTitlesIdx = async(abortControler) => {
   if(page_index === null){
-    const { data } = await axios.get('../index/bucket.titles.json', {signal: abortControler.signal})
+    const { data } = await axios.get('index/pages.json', {signal: abortControler.signal})
     page_index = lunr.Index.load(data)
   }
   return page_index;

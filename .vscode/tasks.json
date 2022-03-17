@@ -6,7 +6,7 @@
     {
       "label": "interactive docker",
       "type": "shell",
-      "command": "docker run -v ${workspaceFolder}:/local -v ${workspaceFolder}/generated:/generated -it zimbee"
+      "command": "docker run -p 8000:3000 -v ${workspaceFolder}:/local -v ${workspaceFolder}/generated:/generated -it zimbee"
     },
     {
       "label": "build docker",
