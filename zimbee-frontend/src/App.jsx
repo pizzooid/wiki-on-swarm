@@ -3,7 +3,7 @@ import './App.css'
 import {searchContents, searchTitles} from './search';
 import create from 'zustand'
 
-const pagesPrefix = "../../dump/A/"
+const pagesPrefix = "../A/"
 const MAX_RESULTS = 7;
 const MAX_RESULTS_TOTAL = 10; // RESULTS + FULLTEXT_RESULTS
 const useStore = create((set, get) => ({

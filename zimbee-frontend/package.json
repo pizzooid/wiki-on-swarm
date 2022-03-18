@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "watch": "vite build --watch --sourcemap",
+    "live": "vite build --watch --sourcemap --outDir ../dump/frontend --emptyOutDir",
     "preview": "vite preview"
   },
   "dependencies": {
