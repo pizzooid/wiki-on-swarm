@@ -1,8 +1,7 @@
 #!/usr/bin/env zx
 // require("time-require");
-import avro from 'avsc';
 
-import {indexSerializer, indexDir, zDumpDir} from './constants.mjs'
+import { cwd, indexDir, zDumpDir, frontendDir } from './constants.mjs'
 // import 'zx/globals';
 // import {load} from 'cheerio'
 // import {createHash, Hash} from 'crypto'
@@ -69,37 +68,14 @@ const main = async () => {
   const files = fs.readdirSync(zDumpDir);
 
   console.log(`Creating search index for ${files.length} files.`)
-  await createPageIndex(files, indexDir, indexFile);
+  createPageIndex(files, indexDir, indexFile);
+  // fs.copyFileSync(path.join(cwd, 'scripts','serializer.mjs'), path.join(frontendDir, 'src', 'serializer.mjs'));
   // await createSearchIdces(files, zDumpDir, indexDir);
 };
 main();
 
 
 function createPageIndex(files, indexDir, indexFile) {
-  // TODO: remove html extension
-    /** A basic logical type to automatically "unwrap" values. */
-  const BoxT = class BoxTypeClass extends avro.types.LogicalType {
-    _fromValue(val) { return val.unboxed; }
-    _toValue(any) { return { unboxed: any }; }
-  }
-
-  const indexSerializer = avro.Type.forSchema(
-    { "type": "record", "fields": [
-      { "name": "version", "type": "string" }, 
-      { "name": "fields", "type": { "type": "array", "items": "string" } }, 
-      { "name": "fieldVectors", "type": { "type": "array", "items": { "type": "array", "items": ["string", { "type": "array", "items": "float" }] } } },
-      { "name": "invertedIndex", "type": 
-        { "type": "array", "items": 
-          { "type": "array", "items": 
-            ["string", { "type": "record", "fields": [
-              { "name": "_index", "type": "int" }, 
-              { "name": "field", "type": { "type": "map", "values": { "type": "record", "fields": [] } } }]
-            }]
-      }
-      }
-      }, { "name": "pipeline", "type": { "type": "array", "items": "null" } }]
-    }
-  );
   const builder = new lunr.Builder();
   builder.ref('name');
   builder.field('field');
@@ -117,12 +93,11 @@ function createPageIndex(files, indexDir, indexFile) {
   const idx = builder.build();
   console.log("Serializing 2/2")
   const json = idx.toJSON();
-  console.log(json);
   // console.log(JSON.stringify(avro.Type.forValue(json)));
   // console.log("Serializing 2/2")
-  const buffer = indexSerializer.toBuffer(json)
+  // const buffer = indexSerializer.toBuffer(json)
   process.stdout.write('Writing files ... \n');
-  fs.writeFileSync(indexFile + '.json', buffer);
+  fs.writeFileSync(indexFile + '.json', JSON.stringify(json));
   process.stdout.write('Writing files 100% complete. \n');
 }
 
