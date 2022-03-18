@@ -4,19 +4,22 @@ import {searchContents, searchTitles} from './search';
 import create from 'zustand'
 
 const pagesPrefix = "../../dump/A/"
-const MAX_RESULTS = 10;
+const MAX_RESULTS = 7;
+const MAX_RESULTS_TOTAL = 10; // RESULTS + FULLTEXT_RESULTS
 const useStore = create((set, get) => ({
   isSearching: false,
   results: null,
+  resultsView: null, // only display < MAX_RESULTS
   isSearchingFulltext: false,
   fulltextResults: null,
+  fulltextResultsView: null,
   selected: -1,
   selectedResult: null,
   // embedSrc: '../../dump/A',
   embedSrc: 'about:blank',
   selectNext: () => set((state)=>{
-    const numResults = (state.results?.length || 0) + (state.fulltextResults?.length || 0);
-    const selected = Math.min(state.selected+1, numResults -1, MAX_RESULTS-1)
+    const numResults = (state.resultsView?.length || 0) + (state.fulltextResults?.length || 0);
+    const selected = Math.min(state.selected+1, numResults -1, MAX_RESULTS_TOTAL-1)
     let selectedResult = getSelectedResult(state, selected);
     return {selected:selected, selectedResult: selectedResult} 
   }),
@@ -25,20 +28,27 @@ const useStore = create((set, get) => ({
     let selectedResult = getSelectedResult(state, selected);
     return {selected:selected, selectedResult: selectedResult} 
   }),
-  setResults: (results) => set({ results: results?.slice(0,7), isSearching: false, selected:-1 }),
+  setResults: (results) => set({ results: results, isSearching: false, selected:-1, resultsView: results?.slice(0,MAX_RESULTS)||[] }),
   setSearching: () => set({ results: null, isSearching: true, selected:-1 }),
-  setFulltextResults: (results) => {console.log('results', results); set({ fulltextResults: results, isSearchingFulltext: false, selected: -1 })},
+  setFulltextResults: (results) => {
+    set(state=>{ 
+      const numRes = (state?.resultsView?.length || 0);
+      console.log(state?.resultsView)
+      const resView = results
+      //?.filter(ftr=>!state?.resultsView?.some(r=>ftr.ref===r.ref))
+      ?.slice( 0, MAX_RESULTS_TOTAL-numRes ) || [] ;
+      return { fulltextResults: results, isSearchingFulltext: false, selected: -1, fulltextResultsView: resView } })},
   setSearchingFulltext: () => set({ fulltextResults: null, isSearchingFulltext: true, selected: -1 }),
   setEmbedToResult: ()=>set(state=>{
     const src = state?.selectedResult?.ref;
     return {
-      embedSrc:src?pagesPrefix+src:'about:blank'
+      embedSrc:src?pagesPrefix+src+'.html':'about:blank'
 
     }}),
 }))
 
 function getSelectedResult(state, selected) {
-  const numPageResults = state.results?.length ?? 0;
+  const numPageResults = state.resultsView?.length ?? 0;
   let selectedResult = null;
   if (selected >= 0) {
     if (selected < numPageResults) {
@@ -51,11 +61,11 @@ function getSelectedResult(state, selected) {
 }
 
 function Results(props) {
-  const pageResults = useStore(state=>state.results);
+  const pageResults = useStore(state=>state.resultsView);
   const setPageResults = useStore(state=>state.setResults);
   const searchingPages = useStore(state=>state.isSearching);
   const setSearchingPages = useStore(state=>state.setSearching);
-  const fulltextResults = useStore(state=>state.fulltextResults)?.slice(0,MAX_RESULTS-numPageResults) || null;
+  const fulltextResults = useStore(state=>state.fulltextResultsView);
   const setFulltextResults = useStore(state=>state.setFulltextResults);
   const setSearchingFulltext = useStore(state=>state.setSearchingFulltext);
   let selectedResult = useStore(state=>state.selectedResult);
@@ -70,12 +80,11 @@ function Results(props) {
         return;
       setPageResults(result);
     }).catch((e) => { console.log(e) } ); // TODO: handle errors correctly (skip e.message === 'canceled')
-    // searchContents(props.searchString, abortController).then((result) => {
-    //   if (unmounted)
-    //     return;
-    //   setFulltextResults(result);
-    //   setSelected(1);
-    // }).catch((e) => { console.log(e) } );
+    searchContents(props.searchString, abortController).then((result) => {
+      if (unmounted)
+        return;
+      setFulltextResults(result);
+    }).catch((e) => { console.log(e) } );
     return function () {
       unmounted = true;
       abortController.abort("Cancelling in cleanup");

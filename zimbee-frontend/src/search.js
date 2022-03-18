@@ -9,6 +9,7 @@ export const getTitlesIdx = async(abortControler) => {
   if(page_index === null){
     const { data } = await axios.get('index/pages.json', {signal: abortControler.signal})
     page_index = lunr.Index.load(data)
+    console.log(page_index)
   }
   return page_index;
 }
@@ -21,19 +22,19 @@ export const searchTitles = async (_search, abortController) => {
   }
 }
 
-const buckets = Array(NUM_BUCKETS).fill(null);
-export const getIdx = async (bucket, abortControler) => {
-  if(buckets[bucket] === null){
-    const { data } = await axios.get('../index/bucket' + String(bucket).padStart(2, '0') + '.json', {signal: abortControler.signal})
-    buckets[bucket] = lunr.Index.load(data)
+let fulltext_index = null;
+export const getIdx = async (abortControler) => {
+  if(fulltext_index === null){
+    const { data } = await axios.get('index/fulltext.json', {signal: abortControler.signal})
+    fulltext_index = lunr.Index.load(data)
   }
-  return buckets[bucket];
+  return fulltext_index;
 }
 
 export const searchContents = async (_search, abortController) => {
+  console.log(_search);
   const search = _search.toLowerCase();
-  const bucket = getBucketNo(search)
-  const idx = await getIdx(bucket, abortController);
+  const idx = await getIdx(abortController);
   const res = idx.search(search);
   if (res.length > 0){
     return res;

@@ -70,7 +70,7 @@ const main = async () => {
   console.log(`Creating search index for ${files.length} files.`)
   createPageIndex(files, indexDir, indexFile);
   // fs.copyFileSync(path.join(cwd, 'scripts','serializer.mjs'), path.join(frontendDir, 'src', 'serializer.mjs'));
-  await createSearchIdces(files, zDumpDir, indexDir);
+  createSearchIdces(zDumpDir, indexDir);
 };
 main();
 
@@ -81,27 +81,31 @@ function createPageIndex(files, indexDir, indexFile) {
   builder.field('field');
   files.forEach((fname, idx) => {
     process.stdout.write('Adding pages to index ' + Math.round(100 * idx / files.length) + '% complete ... \r');
-    const name = fname.endsWith('.html')? fname.slice(0, -5) : fname;
+    let name = fname;
+    if(fname.endsWith('.html')){
+      name = fname.slice(0,-5);
+    } else {
+      const fpath = path.join(zDumpDir,fname);
+      fs.moveSync(fpath, fpath+'.html')
+    }
     builder.add({ name: name, field: name.toLowerCase() });
   });
   process.stdout.write('Adding pages to index 100% complete. \n');
   process.stdout.write('Building index \n');
   if (!fs.pathExistsSync(indexDir))
     fs.mkdirSync(indexDir, { recursive: true });
-  // console.log(json)
   console.log("Serializing 1/2")
   const idx = builder.build();
   console.log("Serializing 2/2")
   const json = idx.toJSON();
-  // console.log(JSON.stringify(avro.Type.forValue(json)));
-  // console.log("Serializing 2/2")
-  // const buffer = indexSerializer.toBuffer(json)
-  process.stdout.write('Writing files ... \n');
-  fs.writeFileSync(indexFile + '.json', JSON.stringify(json));
+  const indexFileName = indexFile + '.json'
+  process.stdout.write(`Writing index file (${indexFileName}) ... \n`);
+  fs.writeFileSync(indexFileName, JSON.stringify(json));
   process.stdout.write('Writing files 100% complete. \n');
 }
 
-async function createSearchIdces(files, zDumpDir, targetDIr) {
+function createSearchIdces(zDumpDir, targetDIr) {
+  const files = fs.readdirSync(zDumpDir);
   const builder = new lunr.Builder();
   builder.ref('name');
   builder.field('field');
