@@ -1,16 +1,27 @@
 #!/usr/bin/env zx
 // require("time-require");
-
-import { cwd, indexDir, zDumpDir, frontendDir } from './constants.mjs'
 // import 'zx/globals';
 import {load} from 'cheerio'
 // import {createHash, Hash} from 'crypto'
 import lunr from 'lunr'
 import fs from 'fs-extra'
 import { argv, exit } from 'process'
-// import parseArgs from 'minimist'
 import path from 'path'
 // import { fs } from 'zx'
+
+let zimdir = null;
+if (argv.length >=3 ) {
+  if(fs.ensureDirSync(argv[2])){
+    process.stderr.write(`Path ${argv[2]} does not exist or is no directory.\n`)
+    exit(1);
+  }
+  zimdir = argv[2];
+}
+export const cwd = process.cwd();
+export const zDumpDir = path.join(zimdir??path.join(cwd,'dump'),'A');
+export const frontendDir = path.join(cwd, 'zimbee-frontend');
+export const indexDir = path.join(frontendDir,'public','index');
+export const indexFile = path.join(indexDir,'pages');
 
 const getPageFile = (base, str) => {
   if(str.length < 1)
@@ -125,8 +136,8 @@ function createSearchIdces(zDumpDir, targetDIr) {
 
   console.log("Serializing 1/2")
   const idx = builder.build();
-  console.log("demo search")
-  console.log(idx.search("afrik*"));
+  console.log('demo search ("afrik*")')
+  console.log(idx.search("afrik*")?.slice(0,3));
   console.log("Serializing 2/2")
   const json = idx.toJSON();
   process.stdout.write('Writing files ... \n');
