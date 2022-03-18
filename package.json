@@ -1,13 +1,20 @@
 {
-  "type": "module",
+  "type": "commonjs",
   "dependencies": {
+    "avsc": "^5.7.3",
     "cheerio": "^1.0.0-rc.10",
+    "elasticlunr": "^0.9.5",
     "flexsearch": "https://github.com/nextapps-de/flexsearch/tarball/0.7.0",
     "http-server": "^14.1.0",
     "lunr": "^2.3.9",
+    "time-require": "^0.1.2",
     "zx": "^5.2.0"
   },
   "scripts": {
-    "start": "node scripts/create-index.mjs"
+    "createIndex": "node scripts/create-index.mjs",
+    "processIndex": "node scripts/process-index.mjs"
+  },
+  "devDependencies": {
+    "replpad": "^0.14.1"
   }
 }

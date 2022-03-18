@@ -6,7 +6,7 @@
     {
       "label": "interactive docker",
       "type": "shell",
-      "command": "docker run -p 8000:3000 -v ${workspaceFolder}:/local -v ${workspaceFolder}/generated:/generated -it zimbee"
+      "command": "docker run -v ${workspaceFolder}:/local -it zimbee"
     },
     {
       "label": "build docker",
@@ -15,12 +15,12 @@
     },
     {
       "type": "npm",
-      "script": "start",
+      "script": "createIndex",
       "problemMatcher": [
         "$eslint-compact"
       ],
-      "label": "npm: start",
+      "label": "npm: createIndex",
       "detail": "node src/create-index.mjs"
-    }
+    },
   ]
 }

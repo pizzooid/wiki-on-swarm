@@ -1,14 +1,18 @@
 #!/usr/bin/env zx
+// require("time-require");
+import avro from 'avsc';
 
-import 'zx/globals';
-import {load} from 'cheerio';
-import {createHash, Hash} from 'crypto';
-import lunr from 'lunr';
-import { writeFileSync } from 'fs';
-import { argv, exit } from 'process';
-import parseArgs from 'minimist';
-import path from 'path';
-import { $, fs } from 'zx';
+import {indexSerializer, indexDir, zDumpDir} from './constants.mjs'
+// import 'zx/globals';
+// import {load} from 'cheerio'
+// import {createHash, Hash} from 'crypto'
+import lunr from 'lunr'
+import fs from 'fs-extra'
+import { argv, exit } from 'process'
+// import parseArgs from 'minimist'
+import path from 'path'
+// import { fs } from 'zx'
+
 const getPageFile = (base, str) => {
   if(str.length < 1)
     throw new Error('search string must be at least 1 letters long');
@@ -35,7 +39,7 @@ function showHelp() {
   process.stdout.write('Usage: \n'+argv._[0]+' -u <zim_url>')
 }
 
-void async function () {
+const main = async () => {
   // const parsedArgs = parseArgs(argv);
   // if(!'u' in parsedArgs || !isValidURL(parsedArgs.u)){
   //   process.stderr.write('Invalid filename.\n')
@@ -46,45 +50,80 @@ void async function () {
   // $`wget ${url} -o /tmp/download.zim` // TODO: enable download
   // $`zimdump dump --dir /tmp/zimdump -- /tmp/download.zim `
   const _cwDir = process.cwd();
-  const zDumpDir = path.join('/local', 'dump','A');
+  // const zDumpDir = path.join('', 'dump','A');
   // const folderHash = await computeMetaHash(zDumpDir);
-  const indexDir = path.join('/local', 'zimbee-frontend','public','index');
-  if(fs.existsSync(indexDir)){
-    const deleteDir = await question(
-    `${indexDir} exists, delete ([yes]/no)?`,
-    {
-      choices:["yes", "no"],
-    });
-    if(deleteDir !== "no" && deleteDir !== "n"){
-      fs.rmSync(indexDir, {recursive: true});
-    }
-  }
+  // const indexDir = path.join('/local', 'zimbee-frontend','public','index');
+  // if(fs.existsSync(indexDir)){
+  //   const deleteDir = await question(
+  //   `${indexDir} exists, delete ([yes]/no)?`,
+  //   {
+  //     choices:["yes", "no"],
+  //   });
+  //   if(deleteDir !== "no" && deleteDir !== "n"){
+  //     fs.rmSync(indexDir, {recursive: true});
+  //   }
+  // }
   const indexFile = path.join(indexDir,'pages');
 
   console.log(`Reading source directory: ${zDumpDir}`)
-  const files = await fs.readdir(zDumpDir);
+  const files = fs.readdirSync(zDumpDir);
 
   console.log(`Creating search index for ${files.length} files.`)
   await createPageIndex(files, indexDir, indexFile);
-  await createSearchIdces(files, zDumpDir, indexDir);
-}()
+  // await createSearchIdces(files, zDumpDir, indexDir);
+};
+main();
 
 
-async function createPageIndex(files, indexDir, indexFile) {
+function createPageIndex(files, indexDir, indexFile) {
+  // TODO: remove html extension
+    /** A basic logical type to automatically "unwrap" values. */
+  const BoxT = class BoxTypeClass extends avro.types.LogicalType {
+    _fromValue(val) { return val.unboxed; }
+    _toValue(any) { return { unboxed: any }; }
+  }
+
+  const indexSerializer = avro.Type.forSchema(
+    { "type": "record", "fields": [
+      { "name": "version", "type": "string" }, 
+      { "name": "fields", "type": { "type": "array", "items": "string" } }, 
+      { "name": "fieldVectors", "type": { "type": "array", "items": { "type": "array", "items": ["string", { "type": "array", "items": "float" }] } } },
+      { "name": "invertedIndex", "type": 
+        { "type": "array", "items": 
+          { "type": "array", "items": 
+            ["string", { "type": "record", "fields": [
+              { "name": "_index", "type": "int" }, 
+              { "name": "field", "type": { "type": "map", "values": { "type": "record", "fields": [] } } }]
+            }]
+      }
+      }
+      }, { "name": "pipeline", "type": { "type": "array", "items": "null" } }]
+    }
+  );
   const builder = new lunr.Builder();
   builder.ref('name');
   builder.field('field');
   files.forEach((fname, idx) => {
-    process.stdout.write('Adding pages to index ' + Math.round(100 * idx / files.length) + '% complete... \r');
-    builder.add({ name: fname, field: fname.toLowerCase() });
+    process.stdout.write('Adding pages to index ' + Math.round(100 * idx / files.length) + '% complete ... \r');
+    const name = fname.endsWith('.html')? fname.slice(0, -5) : fname;
+    builder.add({ name: name, field: name.toLowerCase() });
   });
   process.stdout.write('Adding pages to index 100% complete. \n');
   process.stdout.write('Building index \n');
-  const sIdx = builder.build();
   if (!fs.pathExistsSync(indexDir))
     fs.mkdirSync(indexDir, { recursive: true });
-  await writeFileSync(indexFile + '.json', JSON.stringify(sIdx));
-  process.stdout.write('Writing files 100% complete... \n');
+  // console.log(json)
+  console.log("Serializing 1/2")
+  const idx = builder.build();
+  console.log("Serializing 2/2")
+  const json = idx.toJSON();
+  console.log(json);
+  // console.log(JSON.stringify(avro.Type.forValue(json)));
+  // console.log("Serializing 2/2")
+  const buffer = indexSerializer.toBuffer(json)
+  process.stdout.write('Writing files ... \n');
+  fs.writeFileSync(indexFile + '.json', buffer);
+  process.stdout.write('Writing files 100% complete. \n');
 }
 
 async function createSearchIdces(files, zDumpDir, targetDIr) {
@@ -94,7 +133,7 @@ async function createSearchIdces(files, zDumpDir, targetDIr) {
 
     let contents = await getFileContents(fname);
     const words = contents
-      .split(/['".,\/#!$%\^&\*;:{}=\-_`~()\n\r\s]+/) // TODO: add special chars
+      .split(/['".,\/#!$%\^&\*;:{}=+\-_`~()\n\r\s]+/) // TODO: add special chars
       .filter(s => s.length >= 3);
     let wordScore = new Map();
     words.forEach((word, wIdx) => {
@@ -128,27 +167,4 @@ async function createSearchIdces(files, zDumpDir, targetDIr) {
       return ""
     }
   }
-}
-
-// from https://stackoverflow.com/questions/68074935/hash-of-folders-in-nodejs
-async function computeMetaHash(folder, inputHash = null) {
-    const hash = inputHash ? inputHash : createHash('sha256');
-    const info = await fs.readdir(folder, { withFileTypes: true });
-    // construct a string from the modification date, the filename and the filesize
-    for (let item of info) {
-        const fullPath = path.join(folder, item.name);
-        if (item.isFile()) {
-            const statInfo = await fs.stat(fullPath);
-            // compute hash string name:size:mtime
-            const fileInfo = `${fullPath}:${statInfo.size}:"${statInfo.mtimeMs}"`;
-            hash.update(fileInfo);
-        } else if (item.isDirectory()) {
-            // recursively walk sub-folders
-            await computeMetaHash(fullPath, hash);
-        }
-    }
-    // if not being called recursively, get the digest and return it as the hash result
-    if (!inputHash) {
-        return hash.digest('hex');
-    }
 }

@@ -7,11 +7,11 @@
     {
       "type": "pwa-node",
       "request": "launch",
-      "name": "Launch Program",
+      "name": "Launch createIndex",
       "skipFiles": [
         "<node_internals>/**"
       ],
-      "program": "${workspaceFolder}\\scripts\\process-index.mjs",
+      "program": "${workspaceFolder}\\scripts\\create-index.mjs",
       "outFiles": [
         "${workspaceFolder}/**/*.js"
       ]
