@@ -3,7 +3,7 @@
 
 import { cwd, indexDir, zDumpDir, frontendDir } from './constants.mjs'
 // import 'zx/globals';
-// import {load} from 'cheerio'
+import {load} from 'cheerio'
 // import {createHash, Hash} from 'crypto'
 import lunr from 'lunr'
 import fs from 'fs-extra'
@@ -70,7 +70,7 @@ const main = async () => {
   console.log(`Creating search index for ${files.length} files.`)
   createPageIndex(files, indexDir, indexFile);
   // fs.copyFileSync(path.join(cwd, 'scripts','serializer.mjs'), path.join(frontendDir, 'src', 'serializer.mjs'));
-  // await createSearchIdces(files, zDumpDir, indexDir);
+  await createSearchIdces(files, zDumpDir, indexDir);
 };
 main();
 
@@ -102,37 +102,37 @@ function createPageIndex(files, indexDir, indexFile) {
 }
 
 async function createSearchIdces(files, zDumpDir, targetDIr) {
+  const builder = new lunr.Builder();
+  builder.ref('name');
+  builder.field('field');
   let i = 0;
-  for (const fname of files.slice(0,10000)) {
+  for (const fname of files) {
     i % 20 === 0 && process.stdout.write('Creating fulltext index ' + Math.round(1000*i/files.length)/10+ '% complete... \r'); i++;
-
-    let contents = await getFileContents(fname);
+    const name = fname.endsWith('.html')? fname.slice(0, -5) : fname;
+    builder.add({ name: name, field: name.toLowerCase() });
+    let contents = getFileContents(fname);
     const words = contents
       .split(/['".,\/#!$%\^&\*;:{}=+\-_`~()\n\r\s]+/) // TODO: add special chars
       .filter(s => s.length >= 3);
-    let wordScore = new Map();
-    words.forEach((word, wIdx) => {
-      const score = 1.0 / wIdx;
-      if (wordScore.has(word))
-        wordScore[word] += score;
-      else
-        wordScore.set(word, score);
 
-    });
-    wordScore.forEach((score, word) => {
-      const targetFile = getIndexFile(targetDIr, word);
-      const targetDir = path.parse(targetFile).dir;
-      if(!fs.pathExistsSync(targetDir))
-        fs.mkdirSync(targetDir, { recursive: true });
-      fs.writeFileSync(targetFile, word + ' ' + score + ':"' + encodeURI(fname) + '"', {flag:'w+'}); // space and : are separators so we can use them here
-    })
+    builder.add({ name: name, field: words });
   }
   process.stdout.write('Creating fulltext index 100% complete... \n');
+
+  console.log("Serializing 1/2")
+  const idx = builder.build();
+  console.log("demo search")
+  console.log(idx.search("afrik*"));
+  console.log("Serializing 2/2")
+  const json = idx.toJSON();
+  process.stdout.write('Writing files ... \n');
+  fs.writeFileSync(path.join(indexDir, 'fulltext.json'), JSON.stringify(json));
   return;
 
-  async function getFileContents(fname) {
+  function getFileContents(fname) {
     try{
-      const file = await fs.readFileSync(path.join(zDumpDir, fname), 'utf-8');
+      const flname = path.join(zDumpDir, fname);
+      const file = fs.readFileSync(flname, 'utf-8');
       const html = load(file);
       let contents = html('body').text().toLowerCase();
       return contents;

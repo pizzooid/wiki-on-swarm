@@ -6,3 +6,4 @@ zimbee-frontend/public/I
 zimbee-frontend/node_modules
 zimbee-frontend/public/index
 *.zim
+wikipedia*

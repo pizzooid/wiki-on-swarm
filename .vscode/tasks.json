@@ -9,6 +9,11 @@
       "command": "docker run -v ${workspaceFolder}:/local -it zimbee"
     },
     {
+      "label": "docker extract",
+      "type": "shell",
+      "command": "docker run -v ${workspaceFolder}:/local -it zimbee"
+    },
+    {
       "label": "build docker",
       "type": "shell",
       "command": "docker build -t zimbee ."
