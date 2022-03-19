@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './App.css'
 import {searchContents, searchTitles} from './search';
 import create from 'zustand'
@@ -127,8 +127,9 @@ function App() {
   const [showSearchBox, setShowSearchBox] = useState(false);
   const [selectNext, selectPrevious] = useStore(state=>[state.selectNext, state.selectPrevious]);
   const [embedSrc, setEmbedToResult] = useStore(state=>[state.embedSrc, state.setEmbedToResult]);
+  const [height, setHeight] = useState(10);
   console.log(embedSrc);
-  const embedHeight = 500;
+  const embedContainer = useRef();
   const handleKeyPress = (event) => {
     setShowSearchBox(true);
     if (event.key === 'ArrowDown') {
@@ -145,8 +146,16 @@ function App() {
       event.preventDefault();
     }
   }
+  useEffect(()=>{
+    const handleResize = () => setHeight(embedContainer.current.clientHeight);
+    window.addEventListener("resize", handleResize);
+    // Call handler right away so state gets updated with initial window size
+    handleResize();
+    // Remove event listener on cleanup
+    return () => window.removeEventListener("resize", handleResize);
+  },[embedContainer])
   return (
-    <>
+    <div style={{display:'flex', flexDirection:'column', height:"100vh"}}>
       <div id="my-outer-header">
         <div className="my-header">
           <input autoFocus={true}
@@ -164,10 +173,10 @@ function App() {
           }
         </div>
       </div>
-      <div>
-        <embed type="text/html" src={embedSrc} width="100%" height={embedHeight} />
+      <div ref={embedContainer} style={{flexGrow:1, overflow:'hidden'}}>
+        <embed type="text/html" src={embedSrc} width="100%" height={height} />
       </div>
-    </>
+    </div>
   )
 }
 

@@ -76,5 +76,5 @@ code {
   transition: border-color 250ms,box-shadow 250ms;
   background-origin: padding-box;
   background-clip: border-box;
-  background-image: linear-gradient(transparent,transparent),url('search.svg');
+  background-image: linear-gradient(transparent,transparent),url('../search.svg');
 }
