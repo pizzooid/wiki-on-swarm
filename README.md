@@ -11,10 +11,10 @@ cd zim
 wget https://download.kiwix.org/zim/wikipedia/wikipedia_en_100_mini_2022-03.zim
 docker run -v ${PWD}:/zim -it quay.io/pizzooid/zimbee convert.sh
 ```
-The folder now contains an offline version of wikipedia with browser based search.
+The folder now contains an offline version of wikipedia with browser-based search.
 
 ## How to display the search page
-The folder created by this script creates a directory called frontend just open it. e.g.
+The folder created by this script creates a directory called `frontend`. Just serve the *parent* directory containing all the pages, and open `http://localhost:8080/frontend` in the browser.
 ```bash
 cd wikipedia_en_100_mini_2022-03
 http-server
@@ -30,7 +30,7 @@ The repository consists of multiple parts:
 
 The index is created using a slightly modified version of [lunr.js](https://github.com/pizzooid/lunr.js) and compressed using [pako](https://github.com/nodeca/pako).
 
-Results Scoring is done using [Okapi BM25](https://en.wikipedia.org/wiki/Okapi_BM25).
+Results are scored using [Okapi BM25](https://en.wikipedia.org/wiki/Okapi_BM25).
 
 Wildcards are supported. Example search terms: `*ar`, `b*r` or `ba*`
 # Video demo
