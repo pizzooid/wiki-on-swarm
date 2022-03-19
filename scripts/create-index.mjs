@@ -38,7 +38,7 @@ const main = async () => {
 
   console.log(`Creating search index for ${files.length} files.`)
   createPageIndex(files, indexDir, indexFile);
-  createSearchIdces(zDumpDir, indexDir);
+  createSearchIdces(zDumpDir);
 };
 main();
 
@@ -75,7 +75,7 @@ function createPageIndex(files, indexDir, indexFile) {
   process.stdout.write('Writing files 100% complete. \n');
 }
 
-function createSearchIdces(zDumpDir, targetDIr) {
+function createSearchIdces(zDumpDir) {
   const files = fs.readdirSync(zDumpDir, {withFileTypes: true});
   const builder = new lunr.Builder();
   builder.ref('name');
@@ -89,7 +89,7 @@ function createSearchIdces(zDumpDir, targetDIr) {
     builder.add({ name: name, field: name.toLowerCase() });
     let contents = getFileContents(fname.name);
     const words = contents
-      .split(/['".,\/#!$%\^&\*;:{}=+\-_`~()\n\r\s]+/) // TODO: add special chars
+      .split(/['".,\/#!$%\^&\*;:{}=+\-_`~()\n\r\s]+/) // Filter characters we don't want to index
       .filter(s => s.length >= 3);
 
     builder.add({ name: name, field: words });
@@ -98,6 +98,7 @@ function createSearchIdces(zDumpDir, targetDIr) {
 
   console.log("Serializing 1/2")
   const idx = builder.build();
+  // Example Search string
   // console.log('demo search ("afrik*")')
   // console.log(idx.search("afrik*")?.slice(0,3));
   console.log("Serializing 2/2")
