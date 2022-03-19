@@ -7,6 +7,7 @@ const pagesPrefix = "../A/"
 const MAX_RESULTS = 7;
 const MAX_RESULTS_TOTAL = 10; // RESULTS + FULLTEXT_RESULTS
 const useStore = create((set, get) => ({
+  showResultsPage: false,
   isSearching: false,
   results: null,
   resultsView: null, // only display < MAX_RESULTS
@@ -33,17 +34,22 @@ const useStore = create((set, get) => ({
   setFulltextResults: (results) => {
     set(state=>{ 
       const numRes = (state?.resultsView?.length || 0);
-      console.log(state?.resultsView)
       const resView = results
       //?.filter(ftr=>!state?.resultsView?.some(r=>ftr.ref===r.ref))
       ?.slice( 0, MAX_RESULTS_TOTAL-numRes ) || [] ;
       return { fulltextResults: results, isSearchingFulltext: false, selected: -1, fulltextResultsView: resView } })},
   setSearchingFulltext: () => set({ fulltextResults: null, isSearchingFulltext: true, selected: -1 }),
-  setEmbedToResult: ()=>set(state=>{
+  setEmbedSrc: (ref) => set(() => {
+    return { embedSrc: ref ? pagesPrefix + ref + '.html' : 'about:blank', showResultsPage:false}
+  }),
+  onEnter: ()=>set(state=>{
+    if (state.selected == -1) { // nothing selected display search results page
+      return {showResultsPage: true};
+    } 
     const src = state?.selectedResult?.ref;
     return {
-      embedSrc:src?pagesPrefix+src+'.html':'about:blank'
-
+      embedSrc:src?pagesPrefix+src+'.html':'about:blank',
+      showResultsPage:false
     }}),
 }))
 
@@ -69,6 +75,7 @@ function Results(props) {
   const setFulltextResults = useStore(state=>state.setFulltextResults);
   const setSearchingFulltext = useStore(state=>state.setSearchingFulltext);
   let selectedResult = useStore(state=>state.selectedResult);
+  const setEmbedSrc = useStore(state=>state.setEmbedSrc);
 
   useEffect(() => {
     setSearchingPages();
@@ -92,19 +99,14 @@ function Results(props) {
   }
   ,[props.searchString])
 
-  const setContent = (page) => {
-    console.log(pagesPrefix + page);
-    document.getElementById('wiki-embed').src = pagesPrefix+page+'.html';
-  };
-
   return (
         <div className='results-list'>
           <div key='titles.search.title' className='results-list-heading'>Page Results</div>
           { 
           searchingPages ? <div className='results-list'>Loading ...</div> :
           pageResults === null || pageResults === undefined || pageResults.length===0 ? <div className='results-list'>No matching pages</div> :
-          pageResults.map(r =>
-            <div key={r.ref} className={"results-list-item" + (selectedResult===r ?' result-active':'')} onClick={()=>setContent(r.ref)}>
+          pageResults.map((r) =>
+            <div key={r.ref} style={{cursor:"pointer"}} className={"results-list-item" + (selectedResult===r ?' result-active':'')} onMouseDown={()=>setEmbedSrc(r.ref)}>
               {r.ref}
             </div>
           )}
@@ -126,9 +128,9 @@ function App() {
   const [searchString, setSearchString] = useState("");
   const [showSearchBox, setShowSearchBox] = useState(false);
   const [selectNext, selectPrevious] = useStore(state=>[state.selectNext, state.selectPrevious]);
-  const [embedSrc, setEmbedToResult] = useStore(state=>[state.embedSrc, state.setEmbedToResult]);
+  const [embedSrc, onEnter] = useStore(state=>[state.embedSrc, state.onEnter]);
+  const showResultsPage = useStore(state=>state.showResultsPage);
   const [height, setHeight] = useState(10);
-  console.log(embedSrc);
   const embedContainer = useRef();
   const handleKeyPress = (event) => {
     setShowSearchBox(true);
@@ -141,7 +143,7 @@ function App() {
       event.preventDefault();
     }
     if (event.key === 'Enter') {
-      setEmbedToResult();
+      onEnter();
       setShowSearchBox(false);
       event.preventDefault();
     }
@@ -166,7 +168,7 @@ function App() {
             onFocus={() => setShowSearchBox(true)}
             onBlur={() => setShowSearchBox(false)}
           />
-          {showSearchBox && searchString &&
+          {!showResultsPage && showSearchBox && searchString &&
             <div className="search-results">
               <Results search="" searchString={searchString} />
             </div>
@@ -174,7 +176,22 @@ function App() {
         </div>
       </div>
       <div ref={embedContainer} style={{flexGrow:1, overflow:'hidden'}}>
-        <embed type="text/html" src={embedSrc} width="100%" height={height} />
+        {showResultsPage
+          ? 
+          <div style={{overflow: 'auto', height:"100%"}}>
+            <div style={{ maxWidth: '55.8em', marginLeft: "auto", marginRight: "auto" }}>
+              <h1 className="section-heading">
+                <span className="mw-headline" >Search Results</span>
+              </h1>
+              <Results search="" searchString={searchString} />
+              <div><div style={{ clear: "both", backgroundImage: "linear-gradient(180deg, #E8E8E8, white)", borderTop: "dashed 2px #AAAAAA", padding: "0.5em 0.5em 0.5em 0.5em", marginTop: "1em", direction: "ltr" }}>
+                Search results provided by zimbee.
+              </div>
+              </div>
+            </div>
+          </div>
+          : <embed type="text/html" src={embedSrc} width="100%" height={height} />
+        }
       </div>
     </div>
   )
