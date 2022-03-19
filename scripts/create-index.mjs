@@ -24,15 +24,14 @@ export const cwd = process.cwd();
 export const zDumpDir = path.join(zimdir??path.join(cwd,'dump'),'A');
 export const frontendDir = path.join(cwd, 'zimbee-frontend');
 export const indexDir = path.join(frontendDir,'public','index');
-export const indexFile = path.join(indexDir,'pages');
-console.log(`Output: ${zDumpDir}`)
+console.log(`Output: ${indexDir}`)
 
 function showHelp() {
   process.stdout.write('Usage: \n npm createIndex <zim_dir>')
 }
 
 const main = async () => {
-  const indexFile = path.join(indexDir,'pages');
+  const indexFile = path.join(indexDir,'page-index');
 
   console.log(`Reading source directory: ${zDumpDir}`)
   const files = fs.readdirSync(zDumpDir, {withFileTypes: true});
