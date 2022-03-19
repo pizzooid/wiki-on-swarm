@@ -7,4 +7,5 @@ COPY . /zimbee
 RUN cd /zimbee && npm install
 RUN cd /zimbee/zimbee-frontend && npm install
 RUN npm install -g zx
+WORKDIR /zimbee
 ENTRYPOINT [ "/bin/bash" ]
