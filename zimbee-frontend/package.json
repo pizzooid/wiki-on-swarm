@@ -5,12 +5,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "live": "vite build --watch --sourcemap --outDir ../dump/frontend --emptyOutDir",
+    "live": "vite build --watch --sourcemap --outDir ../dump/frontend --eptyOutDir",
     "preview": "vite preview"
   },
   "dependencies": {
     "axios": "^0.26.1",
     "lunr": "github:pizzooid/lunr.js",
+    "pako": "^2.0.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "zustand": "^3.7.1"

@@ -7,6 +7,7 @@
     "flexsearch": "https://github.com/nextapps-de/flexsearch/tarball/0.7.0",
     "http-server": "^14.1.0",
     "lunr": "github:pizzooid/lunr.js",
+    "pako": "^2.0.4",
     "time-require": "^0.1.2",
     "zx": "^5.2.0"
   },

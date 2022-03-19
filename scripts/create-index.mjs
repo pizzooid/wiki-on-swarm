@@ -7,6 +7,7 @@ import lunr from 'lunr'
 import fs from 'fs-extra'
 import { argv, exit } from 'process'
 import path from 'path'
+import pako from 'pako'
 // import { fs } from 'zx'
 
 let zimdir = null;
@@ -111,7 +112,9 @@ function createPageIndex(files, indexDir, indexFile) {
   const json = idx.toJSON();
   const indexFileName = indexFile + '.json'
   process.stdout.write(`Writing index file (${indexFileName}) ... \n`);
-  fs.writeFileSync(indexFileName, JSON.stringify(json));
+  // fs.writeFileSync(indexFileName, JSON.stringify(json));
+  const bytes = pako.gzip(JSON.stringify(json));
+  fs.writeFileSync(indexFileName+'.zlib', bytes,"binary");
   process.stdout.write('Writing files 100% complete. \n');
 }
 
@@ -141,7 +144,9 @@ function createSearchIdces(zDumpDir, targetDIr) {
   console.log("Serializing 2/2")
   const json = idx.toJSON();
   process.stdout.write('Writing files ... \n');
-  fs.writeFileSync(path.join(indexDir, 'fulltext.json'), JSON.stringify(json));
+  const fulltextFile = path.join(indexDir, 'fulltext.json')
+  // fs.writeFileSync(fulltextFile, JSON.stringify(json));
+  fs.writeFileSync(fulltextFile+'.zlib', pako.deflate(JSON.stringify(json)));
   return;
 
   function getFileContents(fname) {
